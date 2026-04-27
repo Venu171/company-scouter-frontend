@@ -20,6 +20,12 @@ import {
 import { saveAs } from "file-saver";
 
 
+// ─────────────────────────────────────────────
+// STATIC LOGIN CREDENTIALS (Change these as needed)
+// ─────────────────────────────────────────────
+const VALID_EMAIL = "admin@abilio.com";
+const VALID_PASSWORD = "abilio123";
+
 const API = import.meta.env.VITE_API_URL;
 const CMS_URL = import.meta.env.VITE_CMS_URL;
 const TOKEN = import.meta.env.VITE_TOKEN;
@@ -116,6 +122,103 @@ async function pushLeadToCms(lead) {
     throw new Error(`HTTP ${res.status}: ${errText}`);
   }
   return await res.json();
+}
+
+function LoginScreen({ onLoginSuccess }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    // Static check
+    if (email === VALID_EMAIL && password === VALID_PASSWORD) {
+      setTimeout(() => {
+        onLoginSuccess();
+      }, 600);
+    } else {
+      setError("Invalid email or password");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box
+      sx={{
+        height: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(135deg, #1e3a5f 0%, #2a4f7c 100%)",
+      }}
+    >
+      <Paper
+        elevation={10}
+        sx={{
+          p: 5,
+          width: "100%",
+          maxWidth: 420,
+          borderRadius: "16px",
+          textAlign: "center",
+        }}
+      >
+        <Typography variant="h4" sx={{ mb: 1, fontFamily: "'Playfair Display', serif", color: "#1e3a5f" }}>
+          Welcome Back
+        </Typography>
+        <Typography sx={{ mb: 4, color: "#6b7280" }}>
+          Sign in to USA Market Expansion Intelligence
+        </Typography>
+
+        <form onSubmit={handleLogin}>
+          <TextField
+            fullWidth
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            sx={{ mb: 2 }}
+            required
+          />
+          <TextField
+            fullWidth
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            sx={{ mb: 3 }}
+            required
+          />
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            size="large"
+            disabled={loading}
+            sx={{
+              py: 1.5,
+              background: "linear-gradient(135deg, #1e3a5f 0%, #2a4f7c 100%)",
+              color: "#c9a84c",
+              fontWeight: 700,
+              fontSize: "16px",
+            }}
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
+          </Button>
+        </form>
+      </Paper>
+    </Box>
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -885,7 +988,7 @@ function Message({ msg, onDownloadFull }) {
 // ─────────────────────────────────────────────
 // APP
 // ─────────────────────────────────────────────
-export default function App() {
+function MainApp({ onLogout }) {
   const [sessionId, setSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -1053,9 +1156,26 @@ export default function App() {
           <div className="header-title">USA Market Expansion Intelligence</div>
           <div className="header-sub">Powered by AI Agents · Facts Only</div>
         </div>
-        <div className="header-status">
+        <div className="header-status" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <div className={`status-dot ${sessionId ? "active" : ""}`} />
           {sessionId ? "Session Active" : "No Session"}
+
+          {/* ← LOGOUT BUTTON */}
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={onLogout}
+            sx={{
+              borderColor: "#1e3a5f",
+              color: "#fff",
+              fontSize: "12px",
+              textTransform: "none",
+              borderRadius: "8px",
+              background: "#1e3a5f",
+            }}
+          >
+            Logout
+          </Button>
         </div>
       </div>
 
@@ -1117,4 +1237,20 @@ export default function App() {
       </div>
     </>
   );
+}
+
+export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    // Optional: Clear any stored session data if needed
+    localStorage.removeItem("isLoggedIn");
+  };
+
+  if (!isLoggedIn) {
+    return <LoginScreen onLoginSuccess={() => setIsLoggedIn(true)} />;
+  }
+
+  return <MainApp onLogout={handleLogout} />;
 }
